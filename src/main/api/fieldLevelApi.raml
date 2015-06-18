@@ -1,0 +1,27 @@
+#%RAML 0.8
+---
+title: Sample API
+baseUri: http://localhost:8082
+/Encrypt:
+  description: Encrypts the payload sent
+  post: 
+    description: Encrypts the payload sent
+    body: 
+      application/json:
+    responses: 
+      200: 
+        description: Responses of the encrypt request
+        body: 
+          application/json:
+
+/Decrypt:
+  description: Decrypts the payload sent
+  post: 
+    description: Decrypts the payload sent
+    body: 
+      application/json: 
+    responses: 
+      200: 
+        description: Responses of the decrypt request
+        body: 
+          application/json: 
