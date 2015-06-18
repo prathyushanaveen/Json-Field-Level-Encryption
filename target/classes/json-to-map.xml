@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:scripting="http://www.mulesoft.org/schema/mule/scripting" xmlns:encryption="http://www.mulesoft.org/schema/mule/encryption" xmlns:data-mapper="http://www.mulesoft.org/schema/mule/ee/data-mapper" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:json="http://www.mulesoft.org/schema/mule/json" xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:vm="http://www.mulesoft.org/schema/mule/vm" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" version="EE-3.6.1"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd
+http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd
+http://www.mulesoft.org/schema/mule/encryption http://www.mulesoft.org/schema/mule/encryption/current/mule-encryption.xsd
+http://www.mulesoft.org/schema/mule/ee/data-mapper http://www.mulesoft.org/schema/mule/ee/data-mapper/current/mule-data-mapper.xsd
+http://www.mulesoft.org/schema/mule/scripting http://www.mulesoft.org/schema/mule/scripting/current/mule-scripting.xsd">
+    <http:listener-config name="HTTP_Listener_Configuration" host="localhost" port="8082" doc:name="HTTP Listener Configuration"/>
+    <vm:connector name="VM" validateConnections="true" doc:name="VM"/>
+    <encryption:config name="Encryption" doc:name="Encryption"/>
+    <flow name="json-to-mapFlow">
+        <http:listener config-ref="HTTP_Listener_Configuration" path="/JsonMap" doc:name="HTTP"/>
+        <logger message="Received Message #[payload]" level="INFO" doc:name="Logger"/>
+        <vm:outbound-endpoint exchange-pattern="request-response" path="vmq" connector-ref="VM" doc:name="VM"/>
+        <logger message="After Grrovy conversion #[payload]" level="INFO" doc:name="Logger"/>
+        <json:object-to-json-transformer doc:name="Object to JSON"/>
+        <message-properties-transformer doc:name="Message Properties">
+            <add-message-property key="Content-Type" value="application/json"/>
+        </message-properties-transformer>
+        <logger message="#[payload]" level="INFO" doc:name="Logger"/>
+    </flow>
+    <flow name="json-to-mapFlow1">
+        <vm:inbound-endpoint exchange-pattern="request-response" path="vmq" connector-ref="VM" doc:name="VM"/>
+        <logger message="Initial Message #[message.payloadAs(java.lang.String)]" level="INFO" doc:name="Logger"/>
+         <json:json-to-object-transformer returnClass="java.util.LinkedHashMap" doc:name="JSON to Object"/>
+        <logger message="After toMap Conversion #[payload]" level="INFO" doc:name="Logger"/>
+        <foreach collection="#[payload.entrySet()]" doc:name="For Each">
+            <logger message="Inside for each #[payload]" level="INFO" doc:name="Logger"/>
+            <choice doc:name="Choice">
+                <when expression="#[payload.value.Encrypt == 'TRUE']">
+                    <flow-ref name="EncryptionFlow" doc:name="EncryptionFlow"/>
+                </when>
+                <otherwise>
+                    <logger message="No Changes" level="INFO" doc:name="Logger"/>
+                </otherwise>
+            </choice>
+        </foreach>
+        
+    </flow>
+    <flow name="EncryptionFlow">
+        <enricher source="#[payload]" target="#[payload.value.value]" doc:name="Message Enricher">
+            <encryption:encrypt config-ref="Encryption" input-ref="#[payload.value.value]" using="JCE_ENCRYPTER" doc:name="Encryption">
+                <encryption:jce-encrypter key="PlainKey4JCEMode" algorithm="AES" encryptionMode="CBC"/>
+            </encryption:encrypt>
+        </enricher>
+        <logger message="After Encryption #[payload]" level="INFO" doc:name="Logger"/>
+    </flow>
+</mule>
