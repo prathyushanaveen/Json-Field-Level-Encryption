@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <mule-project xmlns="http://www.mulesoft.com/tooling/project" runtimeId="org.mule.tooling.server.3.6.1.ee" schemaVersion="3.5.0.0">
-    <name>Json-TO-Map</name>
+    <name>json-field-level-encryption</name>
     <description></description>
     <muleExtension name="OAuth provider module" qualifier="org.mule.tooling.ui.contribution.oauth2-provider.3.5.0"/>
     <muleExtension name="Encryption" qualifier="org.mule.tooling.ui.contribution.encryption.3.5.0"/>
